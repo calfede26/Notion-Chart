@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Body Tracker</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #0f0f0f;
+      color: #e8e8e8;
+      padding: 20px;
+      min-height: 100vh;
+    }
+    .header {
+      display: flex;
+      align-items: baseline;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    h1 { font-size: 16px; font-weight: 500; color: #e8e8e8; letter-spacing: 0.04em; text-transform: uppercase; }
+    .updated { font-size: 11px; color: #555; }
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: #999;
+    }
+    .legend-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .chart-wrap {
+      position: relative;
+      width: 100%;
+      height: 280px;
+    }
+    .error { color: #e24b4a; font-size: 13px; padding: 20px 0; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>Body Tracker</h1>
+    <span class="updated" id="updated"></span>
+  </div>
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="background:#378ADD"></div>Distanza corsa (km)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#7F77DD"></div>Punteggio sonno (pt.)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#EF9F27"></div>Push-ups totali</div>
+  </div>
+  <div class="chart-wrap">
+    <canvas id="chart"></canvas>
+  </div>
+  <div id="error"></div>
+
+  <script>
+    async function loadChart() {
+      let data;
+      try {
+        const res = await fetch('data.json?t=' + Date.now());
+        data = await res.json();
+      } catch (e) {
+        document.getElementById('error').innerHTML = '<p class="error">Errore nel caricamento dei dati.</p>';
+        return;
+      }
+
+      if (data.updated) {
+        document.getElementById('updated').textContent = 'aggiornato ' + new Date(data.updated).toLocaleDateString('it-IT');
+      }
+
+      const labels = data.weeks.map(w => w.label);
+      const km     = data.weeks.map(w => w.km);
+      const sleep  = data.weeks.map(w => w.sleep_score);
+      const pushups= data.weeks.map(w => w.pushups);
+
+      new Chart(document.getElementById('chart'), {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [
+            {
+              label: 'Distanza (km)',
+              data: km,
+              borderColor: '#378ADD',
+              backgroundColor: 'rgba(55,138,221,0.07)',
+              borderWidth: 2,
+              pointBackgroundColor: '#378ADD',
+              pointRadius: 4,
+              pointHoverRadius: 6,
+              tension: 0.35,
+              fill: true,
+              yAxisID: 'yLeft'
+            },
+            {
+              label: 'Sonno (pt.)',
+              data: sleep,
+              borderColor: '#7F77DD',
+              backgroundColor: 'transparent',
+              borderWidth: 2,
+              pointBackgroundColor: '#7F77DD',
+              pointRadius: 4,
+              pointHoverRadius: 6,
+              tension: 0.35,
+              fill: false,
+              yAxisID: 'ySleep'
+            },
+            {
+              label: 'Push-ups',
+              data: pushups,
+              borderColor: '#EF9F27',
+              backgroundColor: 'transparent',
+              borderWidth: 2,
+              pointBackgroundColor: '#EF9F27',
+              pointRadius: 4,
+              pointHoverRadius: 6,
+              tension: 0.35,
+              fill: false,
+              yAxisID: 'yRight'
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: '#1a1a1a',
+              borderColor: '#333',
+              borderWidth: 1,
+              titleColor: '#ccc',
+              bodyColor: '#999',
+              callbacks: {
+                label: (item) => {
+                  const units = [' km', ' pt.', ' push-ups'];
+                  return ` ${item.dataset.label}: ${item.parsed.y}${units[item.datasetIndex]}`;
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              grid: { color: 'rgba(255,255,255,0.05)' },
+              ticks: { color: '#555', font: { size: 11 } }
+            },
+            yLeft: {
+              type: 'linear',
+              position: 'left',
+              min: 0,
+              grid: { color: 'rgba(255,255,255,0.05)' },
+              ticks: { color: '#378ADD', font: { size: 10 }, callback: v => v + ' km' }
+            },
+            ySleep: {
+              type: 'linear',
+              position: 'left',
+              min: 65,
+              max: 95,
+              display: false,
+              grid: { drawOnChartArea: false }
+            },
+            yRight: {
+              type: 'linear',
+              position: 'right',
+              min: 0,
+              grid: { drawOnChartArea: false },
+              ticks: { color: '#EF9F27', font: { size: 10 } }
+            }
+          }
+        }
+      });
+    }
+    loadChart();
+  </script>
+</body>
+</html>
