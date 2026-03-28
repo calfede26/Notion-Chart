@@ -1,1 +1,33 @@
+name: Aggiorna dati Body Tracker
 
+"on":
+  schedule:
+    - cron: "0 1 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Installa dipendenze Python
+        run: pip install requests
+
+      - name: Scarica dati da Notion e genera data.json
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+        run: python fetch_notion.py
+
+      - name: Commit e push data.json aggiornato
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data.json
+          git diff --cached --quiet || git commit -m "chore: aggiorna dati Body Tracker $(date -u '+%Y-%m-%d')"
+          git push
