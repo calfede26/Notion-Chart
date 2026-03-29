@@ -11,54 +11,63 @@
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       background: #191919;
       color: #e8e8e8;
-      padding: 20px;
-      min-height: 100vh;
+      padding: 16px 20px 12px;
     }
     .header {
       display: flex;
-      align-items: baseline;
-      gap: 12px;
-      margin-bottom: 20px;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
     }
-    h1 { font-size: 16px; font-weight: 500; color: inherit; letter-spacing: 0.04em; text-transform: uppercase; }
-    .updated { font-size: 11px; color: #666; }
     .legend {
       display: flex;
-      flex-wrap: wrap;
-      gap: 16px;
-      margin-bottom: 16px;
+      gap: 18px;
     }
     .legend-item {
       display: flex;
       align-items: center;
       gap: 6px;
-      font-size: 12px;
-      color: #aaa;
+      font-size: 11px;
+      color: #666;
+      letter-spacing: 0.02em;
     }
-    .legend-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
+    .legend-line {
+      width: 16px;
+      height: 1.5px;
+      border-radius: 1px;
       flex-shrink: 0;
+    }
+    .updated {
+      font-size: 10px;
+      color: #444;
     }
     .chart-wrap {
       position: relative;
       width: 100%;
-      height: 280px;
+      height: 260px;
     }
-    .error { color: #e24b4a; font-size: 13px; padding: 20px 0; }
+    .error { color: #e24b4a; font-size: 12px; padding: 12px 0; }
   </style>
 </head>
 <body>
   <div class="header">
-    <h1>Body Tracker</h1>
+    <div class="legend">
+      <div class="legend-item">
+        <div class="legend-line" style="background:#4a9edd"></div>
+        Distanza (km)
+      </div>
+      <div class="legend-item">
+        <div class="legend-line" style="background:#9b8fe8"></div>
+        Sonno (pt.)
+      </div>
+      <div class="legend-item">
+        <div class="legend-line" style="background:#e8a83a"></div>
+        Push-ups
+      </div>
+    </div>
     <span class="updated" id="updated"></span>
   </div>
-  <div class="legend">
-    <div class="legend-item"><div class="legend-dot" style="background:#378ADD"></div>Distanza corsa (km)</div>
-    <div class="legend-item"><div class="legend-dot" style="background:#7F77DD"></div>Punteggio sonno (pt.)</div>
-    <div class="legend-item"><div class="legend-dot" style="background:#EF9F27"></div>Push-ups totali</div>
-  </div>
+
   <div class="chart-wrap">
     <canvas id="chart"></canvas>
   </div>
@@ -76,13 +85,13 @@
       }
 
       if (data.updated) {
-        document.getElementById('updated').textContent = 'aggiornato ' + new Date(data.updated).toLocaleDateString('it-IT');
+        document.getElementById('updated').textContent = new Date(data.updated).toLocaleDateString('it-IT', { day: '2-digit', month: 'short' });
       }
 
-      const labels = data.weeks.map(w => w.label);
-      const km     = data.weeks.map(w => w.km);
-      const sleep  = data.weeks.map(w => w.sleep_score);
-      const pushups= data.weeks.map(w => w.pushups);
+      const labels  = data.weeks.map(w => w.label.split('\n')[0]);
+      const km      = data.weeks.map(w => w.km);
+      const sleep   = data.weeks.map(w => w.sleep_score);
+      const pushups = data.weeks.map(w => w.pushups);
 
       new Chart(document.getElementById('chart'), {
         type: 'line',
@@ -90,41 +99,38 @@
           labels,
           datasets: [
             {
-              label: 'Distanza (km)',
               data: km,
-              borderColor: '#378ADD',
-              backgroundColor: 'rgba(55,138,221,0.07)',
-              borderWidth: 2,
-              pointBackgroundColor: '#378ADD',
-              pointRadius: 4,
-              pointHoverRadius: 6,
-              tension: 0.35,
+              borderColor: '#4a9edd',
+              backgroundColor: 'rgba(74,158,221,0.06)',
+              borderWidth: 1.5,
+              pointRadius: 0,
+              pointHoverRadius: 3,
+              pointHoverBackgroundColor: '#4a9edd',
+              tension: 0.4,
               fill: true,
               yAxisID: 'yLeft'
             },
             {
-              label: 'Sonno (pt.)',
               data: sleep,
-              borderColor: '#7F77DD',
+              borderColor: '#9b8fe8',
               backgroundColor: 'transparent',
-              borderWidth: 2,
-              pointBackgroundColor: '#7F77DD',
-              pointRadius: 4,
-              pointHoverRadius: 6,
-              tension: 0.35,
+              borderWidth: 1.5,
+              pointRadius: 0,
+              pointHoverRadius: 3,
+              pointHoverBackgroundColor: '#9b8fe8',
+              tension: 0.4,
               fill: false,
               yAxisID: 'ySleep'
             },
             {
-              label: 'Push-ups',
               data: pushups,
-              borderColor: '#EF9F27',
+              borderColor: '#e8a83a',
               backgroundColor: 'transparent',
-              borderWidth: 2,
-              pointBackgroundColor: '#EF9F27',
-              pointRadius: 4,
-              pointHoverRadius: 6,
-              tension: 0.35,
+              borderWidth: 1.5,
+              pointRadius: 0,
+              pointHoverRadius: 3,
+              pointHoverBackgroundColor: '#e8a83a',
+              tension: 0.4,
               fill: false,
               yAxisID: 'yRight'
             }
@@ -137,30 +143,50 @@
           plugins: {
             legend: { display: false },
             tooltip: {
-              backgroundColor: '#1a1a1a',
+              backgroundColor: '#222',
               borderColor: '#333',
-              borderWidth: 1,
-              titleColor: '#ccc',
-              bodyColor: '#999',
+              borderWidth: 0.5,
+              titleColor: '#aaa',
+              bodyColor: '#777',
+              padding: 10,
+              titleFont: { size: 11 },
+              bodyFont: { size: 11 },
               callbacks: {
+                title: (items) => 'Settimana ' + (items[0].dataIndex + 1),
                 label: (item) => {
-                  const units = [' km', ' pt.', ' push-ups'];
-                  return ` ${item.dataset.label}: ${item.parsed.y}${units[item.datasetIndex]}`;
+                  const labels = ['km', 'pt.', 'push-ups'];
+                  const colors = ['#4a9edd', '#9b8fe8', '#e8a83a'];
+                  return `  ${item.parsed.y} ${labels[item.datasetIndex]}`;
                 }
               }
             }
           },
           scales: {
             x: {
-              grid: { color: 'rgba(255,255,255,0.06)' },
-              ticks: { color: '#555', font: { size: 11 } }
+              grid: { display: false },
+              border: { display: false },
+              ticks: {
+                color: '#444',
+                font: { size: 10 },
+                maxRotation: 0
+              }
             },
             yLeft: {
               type: 'linear',
               position: 'left',
               min: 0,
-              grid: { color: 'rgba(255,255,255,0.06)' },
-              ticks: { color: '#378ADD', font: { size: 10 }, callback: v => v + ' km' }
+              grid: {
+                color: 'rgba(255,255,255,0.04)',
+                drawTicks: false
+              },
+              border: { display: false, dash: [3, 3] },
+              ticks: {
+                color: '#444',
+                font: { size: 9 },
+                padding: 6,
+                maxTicksLimit: 5,
+                callback: v => v + ' km'
+              }
             },
             ySleep: {
               type: 'linear',
@@ -175,7 +201,13 @@
               position: 'right',
               min: 0,
               grid: { drawOnChartArea: false },
-              ticks: { color: '#EF9F27', font: { size: 10 } }
+              border: { display: false },
+              ticks: {
+                color: '#444',
+                font: { size: 9 },
+                padding: 6,
+                maxTicksLimit: 5
+              }
             }
           }
         }
