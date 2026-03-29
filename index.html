@@ -9,7 +9,7 @@
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      background: #191919;
+      background: #2f2f2f;
       color: #e8e8e8;
       padding: 16px 20px 12px;
     }
@@ -28,7 +28,7 @@
       align-items: center;
       gap: 6px;
       font-size: 11px;
-      color: #666;
+      color: #777;
       letter-spacing: 0.02em;
     }
     .legend-line {
@@ -39,7 +39,7 @@
     }
     .updated {
       font-size: 10px;
-      color: #444;
+      color: #555;
     }
     .chart-wrap {
       position: relative;
@@ -53,15 +53,15 @@
   <div class="header">
     <div class="legend">
       <div class="legend-item">
-        <div class="legend-line" style="background:#4a9edd"></div>
+        <div class="legend-line" style="background:#4a9edd;box-shadow:0 0 6px rgba(74,158,221,0.7)"></div>
         Distanza (km)
       </div>
       <div class="legend-item">
-        <div class="legend-line" style="background:#9b8fe8"></div>
+        <div class="legend-line" style="background:#9b8fe8;box-shadow:0 0 6px rgba(155,143,232,0.7)"></div>
         Sonno (pt.)
       </div>
       <div class="legend-item">
-        <div class="legend-line" style="background:#e8a83a"></div>
+        <div class="legend-line" style="background:#e8a83a;box-shadow:0 0 6px rgba(232,168,58,0.7)"></div>
         Push-ups
       </div>
     </div>
@@ -74,6 +74,37 @@
   <div id="error"></div>
 
   <script>
+    const GLOW = {
+      blue:   { line: '#4a9edd', shadow: 'rgba(74,158,221,0.55)' },
+      purple: { line: '#9b8fe8', shadow: 'rgba(155,143,232,0.55)' },
+      amber:  { line: '#e8a83a', shadow: 'rgba(232,168,58,0.55)'  }
+    };
+
+    function glowPlugin(colorMap) {
+      return {
+        id: 'glowLines',
+        beforeDatasetsDraw(chart) {
+          const ctx = chart.ctx;
+          const colors = Object.values(colorMap);
+          chart.data.datasets.forEach((ds, i) => {
+            const meta = chart.getDatasetMeta(i);
+            if (meta.hidden || !colors[i]) return;
+            ctx.save();
+            ctx.shadowColor = colors[i].shadow;
+            ctx.shadowBlur  = 12;
+            ctx.lineWidth   = 2;
+            ctx.strokeStyle = colors[i].line;
+            ctx.beginPath();
+            meta.data.forEach((pt, j) => {
+              j === 0 ? ctx.moveTo(pt.x, pt.y) : ctx.lineTo(pt.x, pt.y);
+            });
+            ctx.stroke();
+            ctx.restore();
+          });
+        }
+      };
+    }
+
     async function loadChart() {
       let data;
       try {
@@ -85,13 +116,20 @@
       }
 
       if (data.updated) {
-        document.getElementById('updated').textContent = new Date(data.updated).toLocaleDateString('it-IT', { day: '2-digit', month: 'short' });
+        document.getElementById('updated').textContent =
+          new Date(data.updated).toLocaleDateString('it-IT', { day: '2-digit', month: 'short' });
       }
 
       const labels  = data.weeks.map(w => w.label.split('\n')[0]);
       const km      = data.weeks.map(w => w.km);
       const sleep   = data.weeks.map(w => w.sleep_score);
       const pushups = data.weeks.map(w => w.pushups);
+
+      Chart.register(glowPlugin({
+        0: GLOW.blue,
+        1: GLOW.purple,
+        2: GLOW.amber
+      }));
 
       new Chart(document.getElementById('chart'), {
         type: 'line',
@@ -101,13 +139,16 @@
             {
               data: km,
               borderColor: '#4a9edd',
-              backgroundColor: 'rgba(74,158,221,0.06)',
+              backgroundColor: 'transparent',
               borderWidth: 1.5,
-              pointRadius: 0,
-              pointHoverRadius: 3,
+              pointRadius: 3,
+              pointBackgroundColor: '#4a9edd',
+              pointBorderColor: '#2f2f2f',
+              pointBorderWidth: 1.5,
+              pointHoverRadius: 5,
               pointHoverBackgroundColor: '#4a9edd',
               tension: 0.4,
-              fill: true,
+              fill: false,
               yAxisID: 'yLeft'
             },
             {
@@ -115,8 +156,11 @@
               borderColor: '#9b8fe8',
               backgroundColor: 'transparent',
               borderWidth: 1.5,
-              pointRadius: 0,
-              pointHoverRadius: 3,
+              pointRadius: 3,
+              pointBackgroundColor: '#9b8fe8',
+              pointBorderColor: '#2f2f2f',
+              pointBorderWidth: 1.5,
+              pointHoverRadius: 5,
               pointHoverBackgroundColor: '#9b8fe8',
               tension: 0.4,
               fill: false,
@@ -127,8 +171,11 @@
               borderColor: '#e8a83a',
               backgroundColor: 'transparent',
               borderWidth: 1.5,
-              pointRadius: 0,
-              pointHoverRadius: 3,
+              pointRadius: 3,
+              pointBackgroundColor: '#e8a83a',
+              pointBorderColor: '#2f2f2f',
+              pointBorderWidth: 1.5,
+              pointHoverRadius: 5,
               pointHoverBackgroundColor: '#e8a83a',
               tension: 0.4,
               fill: false,
@@ -143,20 +190,19 @@
           plugins: {
             legend: { display: false },
             tooltip: {
-              backgroundColor: '#222',
-              borderColor: '#333',
+              backgroundColor: '#1e1e1e',
+              borderColor: '#3a3a3a',
               borderWidth: 0.5,
-              titleColor: '#aaa',
-              bodyColor: '#777',
+              titleColor: '#999',
+              bodyColor: '#666',
               padding: 10,
               titleFont: { size: 11 },
               bodyFont: { size: 11 },
               callbacks: {
                 title: (items) => 'Settimana ' + (items[0].dataIndex + 1),
                 label: (item) => {
-                  const labels = ['km', 'pt.', 'push-ups'];
-                  const colors = ['#4a9edd', '#9b8fe8', '#e8a83a'];
-                  return `  ${item.parsed.y} ${labels[item.datasetIndex]}`;
+                  const units = [' km', ' pt.', ' push-ups'];
+                  return `  ${item.parsed.y}${units[item.datasetIndex]}`;
                 }
               }
             }
@@ -165,49 +211,29 @@
             x: {
               grid: { display: false },
               border: { display: false },
-              ticks: {
-                color: '#444',
-                font: { size: 10 },
-                maxRotation: 0
-              }
+              ticks: { color: '#555', font: { size: 10 }, maxRotation: 0 }
             },
             yLeft: {
               type: 'linear',
               position: 'left',
               min: 0,
-              grid: {
-                color: 'rgba(255,255,255,0.04)',
-                drawTicks: false
-              },
+              grid: { color: 'rgba(255,255,255,0.04)', drawTicks: false },
               border: { display: false, dash: [3, 3] },
               ticks: {
-                color: '#444',
-                font: { size: 9 },
-                padding: 6,
-                maxTicksLimit: 5,
-                callback: v => v + ' km'
+                color: '#555', font: { size: 9 }, padding: 6,
+                maxTicksLimit: 5, callback: v => v + ' km'
               }
             },
             ySleep: {
-              type: 'linear',
-              position: 'left',
-              min: 65,
-              max: 95,
-              display: false,
+              type: 'linear', position: 'left',
+              min: 65, max: 95, display: false,
               grid: { drawOnChartArea: false }
             },
             yRight: {
-              type: 'linear',
-              position: 'right',
-              min: 0,
+              type: 'linear', position: 'right', min: 0,
               grid: { drawOnChartArea: false },
               border: { display: false },
-              ticks: {
-                color: '#444',
-                font: { size: 9 },
-                padding: 6,
-                maxTicksLimit: 5
-              }
+              ticks: { color: '#555', font: { size: 9 }, padding: 6, maxTicksLimit: 5 }
             }
           }
         }
