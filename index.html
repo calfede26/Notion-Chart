@@ -7,10 +7,10 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { background: transparent; }
     body {
       font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
-      background: #2f2f2f;
-      color: #e8e8e8;
+      color: #ccc;
       padding: 16px 20px 12px;
     }
     .header {
@@ -19,34 +19,19 @@
       justify-content: space-between;
       margin-bottom: 14px;
     }
-    .legend {
-      display: flex;
-      gap: 18px;
-    }
+    .legend { display: flex; gap: 18px; }
     .legend-item {
       display: flex;
       align-items: center;
       gap: 7px;
       font-size: 12px;
       font-weight: 600;
-      color: #aaa;
+      color: #999;
       letter-spacing: 0.01em;
     }
-    .legend-line {
-      width: 18px;
-      height: 2px;
-      border-radius: 1px;
-      flex-shrink: 0;
-    }
-    .updated {
-      font-size: 10px;
-      color: #555;
-    }
-    .chart-wrap {
-      position: relative;
-      width: 100%;
-      height: 260px;
-    }
+    .legend-line { width: 18px; height: 2px; border-radius: 1px; flex-shrink: 0; }
+    .updated { font-size: 11px; font-weight: 400; color: #666; }
+    .chart-wrap { position: relative; width: 100%; height: 260px; }
     .error { color: #e24b4a; font-size: 12px; padding: 12px 0; }
   </style>
 </head>
@@ -68,126 +53,70 @@
     </div>
     <span class="updated" id="updated"></span>
   </div>
-
-  <div class="chart-wrap">
-    <canvas id="chart"></canvas>
-  </div>
+  <div class="chart-wrap"><canvas id="chart"></canvas></div>
   <div id="error"></div>
-
   <script>
-    const glowColors = [
-      'rgba(74,158,221,0.7)',
-      'rgba(155,143,232,0.7)',
-      'rgba(232,168,58,0.7)'
-    ];
-
+    const FONT = 'ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif';
+    const TICK  = '#888';
+    const GRID  = 'rgba(255,255,255,0.10)';
+    const glowColors = ['rgba(74,158,221,0.7)','rgba(155,143,232,0.7)','rgba(232,168,58,0.7)'];
     const glowPlugin = {
       id: 'glowLines',
       beforeDatasetDraw(chart, args) {
-        const ctx = chart.ctx;
-        const color = glowColors[args.index];
-        if (!color) return;
-        ctx.save();
-        ctx.shadowColor = color;
-        ctx.shadowBlur = 14;
+        chart.ctx.save();
+        chart.ctx.shadowColor = glowColors[args.index] || 'transparent';
+        chart.ctx.shadowBlur = 14;
       },
-      afterDatasetDraw(chart, args) {
-        chart.ctx.restore();
-      }
+      afterDatasetDraw(chart) { chart.ctx.restore(); }
     };
-
     async function loadChart() {
       let data;
       try {
         const res = await fetch('data.json?t=' + Date.now());
         data = await res.json();
-      } catch (e) {
+      } catch(e) {
         document.getElementById('error').innerHTML = '<p class="error">Errore nel caricamento dei dati.</p>';
         return;
       }
-
       if (data.updated) {
         document.getElementById('updated').textContent =
           new Date(data.updated).toLocaleDateString('it-IT', { day: '2-digit', month: 'short' });
       }
-
       const labels  = data.weeks.map(w => w.label.split('\n')[0]);
       const km      = data.weeks.map(w => w.km);
       const sleep   = data.weeks.map(w => w.sleep_score);
       const pushups = data.weeks.map(w => w.pushups);
-
       new Chart(document.getElementById('chart'), {
         type: 'line',
         plugins: [glowPlugin],
         data: {
           labels,
           datasets: [
-            {
-              data: km,
-              borderColor: '#4a9edd',
-              backgroundColor: 'transparent',
-              borderWidth: 1.5,
-              pointRadius: 3,
-              pointBackgroundColor: '#4a9edd',
-              pointBorderColor: '#2f2f2f',
-              pointBorderWidth: 1.5,
-              pointHoverRadius: 5,
-              pointHoverBackgroundColor: '#4a9edd',
-              tension: 0.4,
-              fill: false,
-              yAxisID: 'yLeft'
-            },
-            {
-              data: sleep,
-              borderColor: '#9b8fe8',
-              backgroundColor: 'transparent',
-              borderWidth: 1.5,
-              pointRadius: 3,
-              pointBackgroundColor: '#9b8fe8',
-              pointBorderColor: '#2f2f2f',
-              pointBorderWidth: 1.5,
-              pointHoverRadius: 5,
-              pointHoverBackgroundColor: '#9b8fe8',
-              tension: 0.4,
-              fill: false,
-              yAxisID: 'ySleep'
-            },
-            {
-              data: pushups,
-              borderColor: '#e8a83a',
-              backgroundColor: 'transparent',
-              borderWidth: 1.5,
-              pointRadius: 3,
-              pointBackgroundColor: '#e8a83a',
-              pointBorderColor: '#2f2f2f',
-              pointBorderWidth: 1.5,
-              pointHoverRadius: 5,
-              pointHoverBackgroundColor: '#e8a83a',
-              tension: 0.4,
-              fill: false,
-              yAxisID: 'yRight'
-            }
+            { data: km, borderColor: '#4a9edd', backgroundColor: 'transparent', borderWidth: 1.5,
+              pointRadius: 3, pointBackgroundColor: '#4a9edd', pointBorderWidth: 0,
+              pointHoverRadius: 5, tension: 0.4, fill: false, yAxisID: 'yLeft' },
+            { data: sleep, borderColor: '#9b8fe8', backgroundColor: 'transparent', borderWidth: 1.5,
+              pointRadius: 3, pointBackgroundColor: '#9b8fe8', pointBorderWidth: 0,
+              pointHoverRadius: 5, tension: 0.4, fill: false, yAxisID: 'ySleep' },
+            { data: pushups, borderColor: '#e8a83a', backgroundColor: 'transparent', borderWidth: 1.5,
+              pointRadius: 3, pointBackgroundColor: '#e8a83a', pointBorderWidth: 0,
+              pointHoverRadius: 5, tension: 0.4, fill: false, yAxisID: 'yRight' }
           ]
         },
         options: {
-          responsive: true,
-          maintainAspectRatio: false,
+          responsive: true, maintainAspectRatio: false,
           interaction: { mode: 'index', intersect: false },
           plugins: {
             legend: { display: false },
             tooltip: {
-              backgroundColor: '#1e1e1e',
-              borderColor: '#3a3a3a',
-              borderWidth: 0.5,
-              titleColor: '#bbb',
-              bodyColor: '#777',
-              padding: 10,
-              titleFont: { size: 11, weight: '600', family: 'ui-sans-serif, system-ui, sans-serif' },
-              bodyFont:  { size: 11, family: 'ui-sans-serif, system-ui, sans-serif' },
+              backgroundColor: 'rgba(30,30,30,0.95)', borderColor: '#3a3a3a', borderWidth: 0.5,
+              titleColor: '#bbb', bodyColor: '#777', padding: 10,
+              titleFont: { size: 11, weight: '600', family: FONT },
+              bodyFont: { size: 11, family: FONT },
               callbacks: {
-                title: (items) => 'Settimana ' + (items[0].dataIndex + 1),
-                label: (item) => {
-                  const units = [' km', ' pt.', ' push-ups'];
+                title: items => 'Settimana ' + (items[0].dataIndex + 1),
+                label: item => {
+                  const units = [' km',' pt.',' push-ups'];
                   return `  ${item.parsed.y}${units[item.datasetIndex]}`;
                 }
               }
@@ -195,48 +124,19 @@
           },
           scales: {
             x: {
-              grid: { display: false },
-              border: { display: false },
-              ticks: {
-                color: '#555',
-                font: { size: 10, family: 'ui-sans-serif, system-ui, sans-serif' },
-                maxRotation: 0
-              }
+              grid: { display: false }, border: { display: false },
+              ticks: { color: TICK, font: { size: 11, family: FONT }, maxRotation: 0 }
             },
             yLeft: {
-              type: 'linear',
-              position: 'left',
-              min: 0,
-              grid: { color: 'rgba(255,255,255,0.04)', drawTicks: false },
-              border: { display: false },
-              ticks: {
-                color: '#555',
-                font: { size: 9, family: 'ui-sans-serif, system-ui, sans-serif' },
-                padding: 6,
-                maxTicksLimit: 5,
-                callback: v => v + ' km'
-              }
+              type: 'linear', position: 'left', min: 0,
+              grid: { color: GRID, drawTicks: false }, border: { display: false },
+              ticks: { color: TICK, font: { size: 10, family: FONT }, padding: 6, maxTicksLimit: 5, callback: v => v + ' km' }
             },
-            ySleep: {
-              type: 'linear',
-              position: 'left',
-              min: 65,
-              max: 95,
-              display: false,
-              grid: { drawOnChartArea: false }
-            },
+            ySleep: { type: 'linear', position: 'left', min: 65, max: 95, display: false, grid: { drawOnChartArea: false } },
             yRight: {
-              type: 'linear',
-              position: 'right',
-              min: 0,
-              grid: { drawOnChartArea: false },
-              border: { display: false },
-              ticks: {
-                color: '#555',
-                font: { size: 9, family: 'ui-sans-serif, system-ui, sans-serif' },
-                padding: 6,
-                maxTicksLimit: 5
-              }
+              type: 'linear', position: 'right', min: 0,
+              grid: { drawOnChartArea: false }, border: { display: false },
+              ticks: { color: TICK, font: { size: 10, family: FONT }, padding: 6, maxTicksLimit: 5 }
             }
           }
         }
