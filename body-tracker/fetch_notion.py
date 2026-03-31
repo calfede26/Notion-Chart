@@ -1,6 +1,6 @@
 """
 fetch_notion.py
-Legge la pagina Body Tracker da Notion e genera data.json con i dati delle settimane.
+Legge la pagina Body Tracker da Notion e genera body-tracker/data.json con i dati delle settimane.
 Dipendenze: requests (pip install requests)
 """
 import re
@@ -76,9 +76,9 @@ def main():
         "updated": datetime.datetime.utcnow().isoformat() + "Z",
         "weeks":   weeks,
     }
-    with open("data.json", "w", encoding="utf-8") as f:
+    with open("body-tracker/data.json", "w", encoding="utf-8") as f:
         json.dump(output, f, ensure_ascii=False, indent=2)
-    print(f"Scritto data.json con {len(weeks)} settimane.")
+    print(f"Scritto body-tracker/data.json con {len(weeks)} settimane.")
 
 if __name__ == "__main__":
     main()
