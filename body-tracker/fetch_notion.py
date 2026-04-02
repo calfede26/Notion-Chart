@@ -19,33 +19,21 @@ HEADERS = {
 }
 
 def fetch_blocks(page_id):
-    """Fetch ricorsivo di tutti i blocchi figli di una pagina o di un blocco"""
-    blocks = []
+    """Fetch dei blocchi figli diretti della pagina"""
     url = f"https://api.notion.com/v1/blocks/{page_id}/children?page_size=100"
     res = requests.get(url, headers=HEADERS)
     res.raise_for_status()
-    data = res.json().get("results", [])
-    for block in data:
-        blocks.append(block)
-        # Se il blocco ha children, li fetchiamo ricorsivamente
-        if block.get("has_children", False):
-            child_blocks = fetch_blocks(block["id"])
-            blocks.extend(child_blocks)
-    return blocks
+    return res.json().get("results", [])
 
 def block_plain_text(block):
-    """Estrae tutto il testo grezzo da un blocco (callout, paragraph, heading, ecc.)"""
-    parts = []
-    btype = block.get("type", "")
-    inner = block.get(btype, {})
-    rich = inner.get("rich_text", inner.get("text", []))
-    for rt in rich:
-        parts.append(rt.get("plain_text", ""))
+    """Estrae il testo grezzo da un blocco callout"""
+    inner = block.get("callout", {})
+    rich = inner.get("rich_text", [])
+    parts = [rt.get("plain_text", "") for rt in rich]
     return "".join(parts)
 
 def parse_weeks(blocks):
     weeks = []
-    # Regex aggiornate per catturare il formato dei tuoi callout
     week_re  = re.compile(r"Week\s+(\d+)\s*\(([^)]+)\)")
     km_re    = re.compile(r"([\d]+(?:\.[\d]+)?)\s*km")
     sleep_re = re.compile(r"(\d+)\s*pt")
@@ -59,8 +47,8 @@ def parse_weeks(blocks):
         km_m = km_re.search(text)
         sleep_m = sleep_re.search(text)
         push_m = push_re.search(text)
-        # Debug: stampa tutti i callout letti
-        print("DEBUG callout:", text)
+        # Debug minimo
+        print(f"DEBUG callout letto: {text[:50]}{'...' if len(text) > 50 else ''}")
         if not (wm and km_m and sleep_m and push_m):
             continue
         weeks.append({
@@ -74,20 +62,23 @@ def parse_weeks(blocks):
 
 def main():
     blocks = fetch_blocks(PAGE_ID)
-    print(f"DEBUG: trovati {len(blocks)} blocchi totali")
+    print(f"DEBUG: trovati {len(blocks)} blocchi")
     weeks = parse_weeks(blocks)
     if not weeks:
-        print("Nessuna settimana trovata — controlla il formato dei blocchi.")
+        print("Nessuna settimana trovata — controlla i permessi del token o il formato dei callout.")
         return
+
     weeks.sort(key=lambda w: w["week_num"])
     output = {
         "updated": datetime.datetime.utcnow().isoformat() + "Z",
         "weeks": weeks,
     }
+
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
     OUTPUT_PATH = os.path.join(BASE_DIR, "body-tracker", "data.json")
     with open(OUTPUT_PATH, "w", encoding="utf-8") as f:
         json.dump(output, f, ensure_ascii=False, indent=2)
+
     print(f"Scritto {OUTPUT_PATH} con {len(weeks)} settimane.")
 
 if __name__ == "__main__":
