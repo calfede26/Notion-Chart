@@ -1,5 +1,5 @@
 {
-  "updated": "2026-04-02T14:07:42.510900Z",
+  "updated": "2026-04-02T14:10:44.739139Z",
   "weeks": [
     {
       "label": "S1\nFeb. 02-08",
@@ -55,7 +55,7 @@
       "week_num": 8,
       "km": 15.47,
       "sleep_score": 84,
-      "pushups": 480
+      "pushups": 180
     }
   ]
 }
