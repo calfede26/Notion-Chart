@@ -10,7 +10,7 @@ import datetime
 import requests
 
 NOTION_TOKEN   = os.environ["NOTION_TOKEN"]
-PAGE_ID        = "e668113e-66b2-4746-968d-1c87041ceadd"
+PAGE_ID        = "e668113e66b24746968d1c87041ceadd"
 
 HEADERS = {
     "Authorization": f"Bearer {NOTION_TOKEN}",
