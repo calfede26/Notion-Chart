@@ -85,7 +85,7 @@ def main():
     }
 
     base_dir = os.path.dirname(os.path.abspath(__file__))
-    output_path = os.path.join(base_dir, "body-tracker", "data.json")
+    output_path = os.path.join(base_dir, "data.json")
 
     with open(output_path, "w", encoding="utf-8") as f:
         json.dump(output, f, ensure_ascii=False, indent=2)
