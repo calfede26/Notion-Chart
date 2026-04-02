@@ -39,11 +39,10 @@ def block_plain_text(block):
 def parse_weeks(blocks):
     weeks = []
     # Pattern per estrarre i dati da ogni callout
-    week_re  = re.compile(r"Week\s+(\d+)\s+\(([^)]+)\)")
-    km_re    = re.compile(r"([\d]+\.[\d]+)\s*km")
-    sleep_re = re.compile(r"(\d+)\s*pt\.")
+    week_re  = re.compile(r"Week\s+(\d+)\s*\(([^)]+)\)")
+    km_re    = re.compile(r"([\d]+(?:\.[\d]+)?)\s*km")
+    sleep_re = re.compile(r"(\d+)\s*pt")
     push_re  = re.compile(r"=\s*(\d+)\s*total")
-
     for block in blocks:
         if block.get("type") != "callout":
             continue
