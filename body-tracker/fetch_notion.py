@@ -76,7 +76,11 @@ def main():
         "updated": datetime.datetime.utcnow().isoformat() + "Z",
         "weeks":   weeks,
     }
-    with open("body-tracker/data.json", "w", encoding="utf-8") as f:
+    import os  
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__)) 
+    OUTPUT_PATH = os.path.join(BASE_DIR, "body-tracker", "data.json")  
+    
+    with open(OUTPUT_PATH, "w", encoding="utf-8") as f:
         json.dump(output, f, ensure_ascii=False, indent=2)
     print(f"Scritto body-tracker/data.json con {len(weeks)} settimane.")
 
