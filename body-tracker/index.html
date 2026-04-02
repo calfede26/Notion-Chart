@@ -54,20 +54,31 @@
       },
       afterDatasetDraw(chart) { chart.ctx.restore(); }
     };
-    async function loadChart() {
-      let data;
-      try {
-        const res = await fetch('data.json?t=' + Date.now());
-        data = await res.json();
-      } catch(e) {
-        document.getElementById('error').innerHTML = '<p class="error">Errore nel caricamento dei dati.</p>';
-        return;
-      }
+
+    let chartInstance = null;
+
+    async function fetchData() {
+      const res = await fetch('data.json?t=' + Date.now());
+      return await res.json();
+    }
+
+    function buildChart(data) {
       const labels  = data.weeks.map(w => w.label.split('\n')[0]);
       const km      = data.weeks.map(w => w.km);
       const sleep   = data.weeks.map(w => w.sleep_score);
       const pushups = data.weeks.map(w => w.pushups);
-      new Chart(document.getElementById('chart'), {
+
+      if (chartInstance) {
+        // Aggiorna i dati senza ricreare il chart
+        chartInstance.data.labels = labels;
+        chartInstance.data.datasets[0].data = km;
+        chartInstance.data.datasets[1].data = sleep;
+        chartInstance.data.datasets[2].data = pushups;
+        chartInstance.update('none'); // 'none' = nessuna animazione sull'aggiornamento
+        return;
+      }
+
+      chartInstance = new Chart(document.getElementById('chart'), {
         type: 'line',
         plugins: [glowPlugin],
         data: {
@@ -86,6 +97,7 @@
         },
         options: {
           responsive: true, maintainAspectRatio: false,
+          animation: { duration: 400 },
           interaction: { mode: 'index', intersect: false },
           plugins: {
             legend: { display: false },
@@ -125,7 +137,22 @@
         }
       });
     }
-    loadChart();
+
+    async function refresh() {
+      try {
+        const data = await fetchData();
+        document.getElementById('error').innerHTML = '';
+        buildChart(data);
+      } catch(e) {
+        document.getElementById('error').innerHTML = '<p class="error">Errore nel caricamento dei dati.</p>';
+      }
+    }
+
+    // Caricamento iniziale
+    refresh();
+
+    // Auto-refresh ogni 5 minuti (300000 ms)
+    setInterval(refresh, 5 * 60 * 1000);
   </script>
 </body>
 </html>
