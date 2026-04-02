@@ -1,13 +1,61 @@
 {
-  "updated": "2026-03-27T00:00:00Z",
+  "updated": "2026-04-02T13:48:09.421069Z",
   "weeks": [
-    { "label": "S1\nFeb 02–08",  "week_num": 1, "km": 15.80, "sleep_score": 79, "pushups": 260 },
-    { "label": "S2\nFeb 09–15",  "week_num": 2, "km": 5.14,  "sleep_score": 77, "pushups": 35  },
-    { "label": "S3\nFeb 16–22",  "week_num": 3, "km": 5.19,  "sleep_score": 80, "pushups": 30  },
-    { "label": "S4\nFeb 23–Mar 01", "week_num": 4, "km": 15.30, "sleep_score": 76, "pushups": 280 },
-    { "label": "S5\nMar 02–08",  "week_num": 5, "km": 15.54, "sleep_score": 80, "pushups": 200 },
-    { "label": "S6\nMar 09–15",  "week_num": 6, "km": 15.53, "sleep_score": 83, "pushups": 230 },
-    { "label": "S7\nMar 16–22",  "week_num": 7, "km": 10.36, "sleep_score": 82, "pushups": 190 },
-    { "label": "S8\nMar 23–29",  "week_num": 8, "km": 15.47, "sleep_score": 84, "pushups": 180 }
+    {
+      "label": "S1\nFeb. 02-08",
+      "week_num": 1,
+      "km": 15.8,
+      "sleep_score": 79,
+      "pushups": 260
+    },
+    {
+      "label": "S2\nFeb. 09-15",
+      "week_num": 2,
+      "km": 5.14,
+      "sleep_score": 77,
+      "pushups": 35
+    },
+    {
+      "label": "S3\nFeb. 16-22",
+      "week_num": 3,
+      "km": 5.19,
+      "sleep_score": 80,
+      "pushups": 30
+    },
+    {
+      "label": "S4\nFeb. 23-01",
+      "week_num": 4,
+      "km": 15.3,
+      "sleep_score": 76,
+      "pushups": 280
+    },
+    {
+      "label": "S5\nFeb. 02-08",
+      "week_num": 5,
+      "km": 15.54,
+      "sleep_score": 80,
+      "pushups": 200
+    },
+    {
+      "label": "S6\nFeb. 09-15",
+      "week_num": 6,
+      "km": 15.53,
+      "sleep_score": 83,
+      "pushups": 230
+    },
+    {
+      "label": "S7\nFeb. 16-22",
+      "week_num": 7,
+      "km": 10.36,
+      "sleep_score": 82,
+      "pushups": 190
+    },
+    {
+      "label": "S8\nFeb. 23-29",
+      "week_num": 8,
+      "km": 15.47,
+      "sleep_score": 84,
+      "pushups": 180
+    }
   ]
 }
