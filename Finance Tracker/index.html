@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Totale Effettivo</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { background: #383836; }
+    body {
+      font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      color: #ccc;
+      padding: 16px 20px 12px;
+    }
+    .legend { display: flex; gap: 18px; margin-bottom: 14px; }
+    .legend-item {
+      display: flex; align-items: center; gap: 7px;
+      font-size: 12px; font-weight: 600; color: #999; letter-spacing: 0.01em;
+    }
+    .legend-line { width: 18px; height: 2px; border-radius: 1px; flex-shrink: 0; }
+    .chart-wrap { position: relative; width: 100%; height: 260px; }
+    .error { color: #e24b4a; font-size: 12px; padding: 12px 0; }
+  </style>
+</head>
+<body>
+  <div class="legend">
+    <div class="legend-item">
+      <div class="legend-line" style="background:#3aab5e;box-shadow:0 0 5px rgba(58,171,94,0.8)"></div>
+      Totale effettivo (€)
+    </div>
+  </div>
+  <div class="chart-wrap"><canvas id="chart"></canvas></div>
+  <div id="error"></div>
+
+  <script>
+    const FONT = 'ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif';
+    const TICK = '#888';
+    const GRID = 'rgba(255,255,255,0.08)';
+    const GREEN = '#3aab5e';
+
+    const glowPlugin = {
+      id: 'glowLines',
+      beforeDatasetDraw(chart) {
+        chart.ctx.save();
+        chart.ctx.shadowColor = 'rgba(58,171,94,0.65)';
+        chart.ctx.shadowBlur = 14;
+      },
+      afterDatasetDraw(chart) { chart.ctx.restore(); }
+    };
+
+    async function loadChart() {
+      let data;
+      try {
+        const res = await fetch('data.json?t=' + Date.now());
+        data = await res.json();
+      } catch(e) {
+        document.getElementById('error').innerHTML = '<p class="error">Errore nel caricamento dei dati.</p>';
+        return;
+      }
+
+      new Chart(document.getElementById('chart'), {
+        type: 'line',
+        plugins: [glowPlugin],
+        data: {
+          labels: data.labels,
+          datasets: [{
+            data: data.totale_effettivo,
+            borderColor: GREEN,
+            backgroundColor: 'transparent',
+            borderWidth: 1.5,
+            pointRadius: 3,
+            pointBackgroundColor: GREEN,
+            pointBorderWidth: 0,
+            pointHoverRadius: 5,
+            tension: 0.4,
+            fill: false,
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: 'rgba(30,30,30,0.95)', borderColor: '#3a3a3a', borderWidth: 0.5,
+              titleColor: '#bbb', bodyColor: '#777', padding: 10,
+              titleFont: { size: 11, weight: '600', family: FONT },
+              bodyFont: { size: 11, family: FONT },
+              callbacks: {
+                title: items => data.labels[items[0].dataIndex],
+                label: item => {
+                  const totale = data.totale_effettivo[item.dataIndex];
+                  const netto = data.netto[item.dataIndex];
+                  const lines = ['  Totale: \u20ac' + totale.toLocaleString('it-IT', { minimumFractionDigits: 2 })];
+                  if (netto !== null && netto !== undefined) {
+                    const sign = netto >= 0 ? '+' : '';
+                    lines.push('  Netto: ' + sign + '\u20ac' + Math.abs(netto).toLocaleString('it-IT', { minimumFractionDigits: 2 }));
+                  }
+                  return lines;
+                },
+                labelColor: item => {
+                  const netto = data.netto[item.dataIndex];
+                  const col = (netto === null || netto === undefined)
+                    ? '#888'
+                    : netto >= 0 ? '#3aab5e' : '#e05555';
+                  return { borderColor: col, backgroundColor: col };
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              grid: { color: GRID, drawTicks: false },
+              border: { display: false },
+              ticks: { color: TICK, font: { size: 10, family: FONT }, maxRotation: 45, autoSkip: true, maxTicksLimit: 14 }
+            },
+            y: {
+              grid: { color: GRID, drawTicks: false },
+              border: { display: false },
+              ticks: {
+                color: TICK, font: { size: 10, family: FONT }, padding: 6, maxTicksLimit: 5,
+                callback: v => '\u20ac' + v.toLocaleString('it-IT')
+              }
+            }
+          }
+        }
+      });
+    }
+
+    loadChart();
+  </script>
+</body>
+</html>
