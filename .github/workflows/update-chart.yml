@@ -1,4 +1,4 @@
-name: Aggiorna dati Body Tracker
+name: Aggiornamento dati grafici
 
 "on":
   schedule:
@@ -22,17 +22,22 @@ jobs:
       - name: Scarica dati Body Tracker
         env:
           NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
-        run: python body-tracker/fetch_notion.py
+        run: python "Body Tracker/fetch_notion.py"
 
-      - name: Scarica dati Tracker
+      - name: Scarica dati Habit Tracker
         env:
           NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
-        run: python tracker/fetch_tracker.py
+        run: python "Habit Tracker/fetch_tracker.py"
+
+      - name: Scarica dati Finance Tracker
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+        run: python fetch_finances.py
 
       - name: Commit e push dati aggiornati
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add body-tracker/data.json tracker/data.json
+          git add "Body Tracker/data.json" "Habit Tracker/data.json" "Finance Tracker/data.json"
           git diff --cached --quiet || git commit -m "chore: aggiorna dati $(date -u '+%Y-%m-%d')"
           git push
