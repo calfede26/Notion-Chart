@@ -27,12 +27,12 @@ jobs:
       - name: Scarica dati Habit Tracker
         env:
           NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
-        run: python "Habit Tracker/fetch_tracker.py"
+        run: python "Habit Tracker/fetch_notion.py"
 
       - name: Scarica dati Finance Tracker
         env:
           NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
-        run: python fetch_finances.py
+        run: python "Finance Tracker/fetch_notion.py"
 
       - name: Commit e push dati aggiornati
         run: |
