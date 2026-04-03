@@ -1,6 +1,6 @@
 """
-tracker/fetch_tracker.py
-Legge il database Tracker da Notion e genera tracker/data.json
+Habit Tracker/fetch_tracker.py
+Legge il database Tracker da Notion e genera Habit-Tracker/data.json
 con la percentuale di abitudini completate per ogni giorno.
 Dipendenze: requests
 """
@@ -58,9 +58,9 @@ def main():
         "habits": HABITS,
         "days": days,
     }
-    with open("tracker/data.json", "w", encoding="utf-8") as f:
+    with open("Habit Tracker/data.json", "w", encoding="utf-8") as f:
         json.dump(output, f, ensure_ascii=False, indent=2)
-    print(f"Scritto tracker/data.json con {len(days)} giorni.")
+    print(f"Scritto Habit Tracker/data.json con {len(days)} giorni.")
 
 if __name__ == "__main__":
     main()
