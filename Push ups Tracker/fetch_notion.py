@@ -50,6 +50,9 @@ def extract(pages):
         if pushup_prop.get("type") == "formula":
             pushup_val = pushup_prop.get("formula", {}).get("number")
 
+        if not pushup_val:  # ignora None e 0
+            continue
+
         labels.append(label)
         total_pushups.append(pushup_val)
 
