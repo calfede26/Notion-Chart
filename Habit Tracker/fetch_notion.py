@@ -60,7 +60,7 @@ def main():
     }
     with open("Habit Tracker/data.json", "w", encoding="utf-8") as f:
         json.dump(output, f, ensure_ascii=False, indent=2)
-    print(f"Scritto Habit Tracker/data.json con {len(days)} giorni.")
+    print(f"Salvati {len(days)} giorni in {output}.")
 
 if __name__ == "__main__":
     main()
