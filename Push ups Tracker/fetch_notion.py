@@ -64,4 +64,4 @@ if __name__ == "__main__":
     out   = os.path.join(os.path.dirname(__file__), "data.json")
     with open(out, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
-    print(f"Salvati {len(data['labels'])} record in {out}")
+    print(f"Estratti e salvati {len(data['labels'])} record")
