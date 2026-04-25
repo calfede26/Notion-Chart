@@ -42,6 +42,26 @@
     }
     .spacer { flex: 1; }
 
+    /* ── Total km ── */
+    .total-km-wrap {
+      display: none;
+      align-items: baseline;
+      gap: 3px;
+      margin-right: 4px;
+    }
+    .total-km-val {
+      font-size: 13px;
+      font-weight: 700;
+      color: #e8820c;
+      letter-spacing: 0.01em;
+    }
+    .total-km-unit {
+      font-size: 10px;
+      font-weight: 600;
+      color: #777;
+      letter-spacing: 0.04em;
+    }
+
     /* ── Nav arrows + label ── */
     .nav {
       display: flex;
@@ -87,6 +107,10 @@
     <button class="mode-btn" id="btn-week">MESI-SETTIMANE</button>
     <button class="mode-btn" id="btn-day">MESE-GIORNO</button>
     <div class="spacer"></div>
+    <div class="total-km-wrap" id="total-km-wrap">
+      <span class="total-km-val" id="total-km-val">—</span>
+      <span class="total-km-unit">KM TOT</span>
+    </div>
     <div class="nav">
       <button class="nav-btn" id="nav-prev">&#8592;</button>
       <div class="nav-label" id="nav-label">—</div>
@@ -121,6 +145,31 @@
         chart.ctx.shadowBlur = 14;
       },
       afterDatasetDraw(chart) { chart.ctx.restore(); }
+    };
+
+    let monthBoundaryIndices = [];
+
+    const monthBoundaryPlugin = {
+      id: 'monthBoundary',
+      afterDraw(chart) {
+        if (mode !== 'week' || monthBoundaryIndices.length === 0) return;
+        const ctx = chart.ctx;
+        const meta = chart.getDatasetMeta(0);
+        const yAxis = chart.scales.y;
+        ctx.save();
+        ctx.strokeStyle = 'rgba(255,255,255,0.22)';
+        ctx.lineWidth = 1.8;
+        ctx.setLineDash([]);
+        for (const idx of monthBoundaryIndices) {
+          if (!meta.data[idx]) continue;
+          const x = meta.data[idx].x;
+          ctx.beginPath();
+          ctx.moveTo(x, yAxis.top);
+          ctx.lineTo(x, yAxis.bottom);
+          ctx.stroke();
+        }
+        ctx.restore();
+      }
     };
 
     let allRecords = [];
@@ -160,10 +209,13 @@
         const d = new Date(r.date);
         if (d.getFullYear() === curYear) sums[d.getMonth()] += r.distance;
       }
+      const values = sums.map(v => v > 0 ? +v.toFixed(2) : null);
+      const total  = sums.reduce((s, v) => s + v, 0);
       return {
         labels: MONTHS_IT,
-        values: sums.map(v => v > 0 ? +v.toFixed(2) : null),
-        tooltipLabels: MONTHS_FULL.map(m => `${m} ${curYear}`)
+        values,
+        tooltipLabels: MONTHS_FULL.map(m => `${m} ${curYear}`),
+        total: +total.toFixed(1)
       };
     }
 
@@ -193,9 +245,17 @@
       const sorted = [...weekMap.entries()]
         .sort((a,b) => a[1].sw - b[1].sw);
 
+      // Compute month boundary indices for the plugin
+      monthBoundaryIndices = [];
+      for (let i = 1; i < sorted.length; i++) {
+        if (sorted[i-1][1].sw.getMonth() !== sorted[i][1].sw.getMonth()) {
+          monthBoundaryIndices.push(i);
+        }
+      }
+
       const labels  = sorted.map(([,v]) => v.label);
       const values  = sorted.map(([,v]) => +v.total.toFixed(2));
-      const tooltipLabels = sorted.map(([k,v]) => `Sett. ${v.label}`);
+      const tooltipLabels = sorted.map(([,v]) => `Sett. ${v.label}`);
 
       return { labels, values, tooltipLabels };
     }
@@ -214,12 +274,19 @@
         }
       }
 
-      const labels = Array.from({length: daysInMonth}, (_,i) => String(i+1));
-      const values = sums.map(v => v !== null ? +v.toFixed(2) : null);
-      const tooltipLabels = Array.from({length: daysInMonth}, (_,i) =>
-        `${i+1} ${MONTHS_FULL[month]} ${year}`);
+      // Exclude days without activity
+      const labels = [], values = [], tooltipLabels = [];
+      let total = 0;
+      for (let i = 0; i < daysInMonth; i++) {
+        if (sums[i] === null) continue;
+        const v = +sums[i].toFixed(2);
+        labels.push(String(i + 1));
+        values.push(v);
+        tooltipLabels.push(`${i + 1} ${MONTHS_FULL[month]} ${year}`);
+        total += v;
+      }
 
-      return { labels, values, tooltipLabels };
+      return { labels, values, tooltipLabels, total: +total.toFixed(1) };
     }
 
     // ── Nav label ────────────────────────────────────────────────────────
@@ -251,9 +318,18 @@
 
       if (chartInstance) chartInstance.destroy();
 
+      // Update total-km display
+      const totalWrap = document.getElementById('total-km-wrap');
+      if (mode === 'week') {
+        totalWrap.style.display = 'none';
+      } else {
+        document.getElementById('total-km-val').textContent = dataset.total ?? '—';
+        totalWrap.style.display = 'flex';
+      }
+
       chartInstance = new Chart(document.getElementById('chart'), {
         type: 'line',
-        plugins: [glowPlugin],
+        plugins: [glowPlugin, monthBoundaryPlugin],
         data: {
           labels,
           datasets: [{
