@@ -14,8 +14,9 @@
       padding: 16px 20px 12px;
     }
 
-    /* ── Mode buttons ── */
+    /* ── Controls: tutto in una riga ── */
     .controls {
+      position: relative;
       display: flex;
       align-items: center;
       gap: 6px;
@@ -42,21 +43,21 @@
     }
     .spacer { flex: 1; }
 
-    /* ── Total km ── */
-    .total-km-wrap {
+    /* ── Stat badges (km tot, att. tot) ── */
+    .stat-wrap {
       display: none;
       align-items: baseline;
       gap: 3px;
-      margin-right: 4px;
+      margin-left: 12px;
     }
-    .total-km-val {
-      font-size: 13px;
+    .stat-val {
+      font-size: 15px;
       font-weight: 700;
       color: #e8820c;
       letter-spacing: 0.01em;
     }
-    .total-km-unit {
-      font-size: 10px;
+    .stat-unit {
+      font-size: 12px;
       font-weight: 600;
       color: #777;
       letter-spacing: 0.04em;
@@ -80,7 +81,7 @@
     }
     .nav-btn:hover { color: #e8820c; }
     .nav-label {
-      font-size: 11px;
+      font-size: 12px;
       font-weight: 600;
       color: #aaa;
       min-width: 80px;
@@ -107,14 +108,19 @@
     <button class="mode-btn" id="btn-week">MESI-SETTIMANE</button>
     <button class="mode-btn" id="btn-day">MESE-GIORNO</button>
     <div class="spacer"></div>
-    <div class="total-km-wrap" id="total-km-wrap">
-      <span class="total-km-val" id="total-km-val">—</span>
-      <span class="total-km-unit">KM TOT</span>
-    </div>
     <div class="nav">
       <button class="nav-btn" id="nav-prev">&#8592;</button>
       <div class="nav-label" id="nav-label">—</div>
       <button class="nav-btn" id="nav-next">&#8594;</button>
+    </div>
+    <div class="spacer"></div>
+    <div class="stat-wrap" id="total-km-wrap">
+      <span class="stat-val" id="total-km-val">—</span>
+      <span class="stat-unit">Kilometri totali</span>
+    </div>
+    <div class="stat-wrap" id="activity-wrap">
+      <span class="stat-val" id="activity-val">—</span>
+      <span class="stat-unit">Attività totali</span>
     </div>
   </div>
 
@@ -205,9 +211,13 @@
 
     function buildYearData() {
       const sums = new Array(12).fill(0);
+      let activityCount = 0;
       for (const r of allRecords) {
         const d = new Date(r.date);
-        if (d.getFullYear() === curYear) sums[d.getMonth()] += r.distance;
+        if (d.getFullYear() === curYear) {
+          sums[d.getMonth()] += r.distance;
+          activityCount++;
+        }
       }
       const values = sums.map(v => v > 0 ? +v.toFixed(2) : null);
       const total  = sums.reduce((s, v) => s + v, 0);
@@ -215,7 +225,8 @@
         labels: MONTHS_IT,
         values,
         tooltipLabels: MONTHS_FULL.map(m => `${m} ${curYear}`),
-        total: +total.toFixed(1)
+        total: +total.toFixed(1),
+        activityCount
       };
     }
 
@@ -257,7 +268,19 @@
       const values  = sorted.map(([,v]) => +v.total.toFixed(2));
       const tooltipLabels = sorted.map(([,v]) => `Sett. ${v.label}`);
 
-      return { labels, values, tooltipLabels };
+      // Count activities per each of the 3 months in the window
+      const monthCounts = [0, 0, 0];
+      for (const r of allRecords) {
+        const d = new Date(r.date);
+        for (let mi = 0; mi < 3; mi++) {
+          const target = new Date(windowStart.getFullYear(), windowStart.getMonth() + mi, 1);
+          if (d.getFullYear() === target.getFullYear() && d.getMonth() === target.getMonth()) {
+            monthCounts[mi]++;
+          }
+        }
+      }
+
+      return { labels, values, tooltipLabels, activityCount: monthCounts };
     }
 
     function buildDayData() {
@@ -286,7 +309,7 @@
         total += v;
       }
 
-      return { labels, values, tooltipLabels, total: +total.toFixed(1) };
+      return { labels, values, tooltipLabels, total: +total.toFixed(1), activityCount: labels.length };
     }
 
     // ── Nav label ────────────────────────────────────────────────────────
@@ -318,13 +341,20 @@
 
       if (chartInstance) chartInstance.destroy();
 
-      // Update total-km display
+      // Update stats display
       const totalWrap = document.getElementById('total-km-wrap');
+      const actWrap   = document.getElementById('activity-wrap');
+      const actVal    = document.getElementById('activity-val');
+
       if (mode === 'week') {
         totalWrap.style.display = 'none';
+        actWrap.style.display   = 'flex';
+        actVal.textContent = dataset.activityCount.join(' · ');
       } else {
-        document.getElementById('total-km-val').textContent = dataset.total ?? '—';
         totalWrap.style.display = 'flex';
+        document.getElementById('total-km-val').textContent = dataset.total ?? '—';
+        actWrap.style.display   = 'flex';
+        actVal.textContent = dataset.activityCount ?? '—';
       }
 
       chartInstance = new Chart(document.getElementById('chart'), {
