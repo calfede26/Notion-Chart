@@ -39,10 +39,15 @@ jobs:
           NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
         run: python "Push ups Tracker/fetch_notion.py"
 
+      - name: Scarica dati Run Tracker
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+        run: python "Run Tracker/fetch_notion.py"
+
       - name: Commit e push dati aggiornati
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add "Body Tracker/data.json" "Habit Tracker/data.json" "Finance Tracker/data.json" "Push ups Tracker/data.json"
+          git add "Body Tracker/data.json" "Habit Tracker/data.json" "Finance Tracker/data.json" "Push ups Tracker/data.json" "Run Tracker/data.json"
           git diff --cached --quiet || git commit -m "chore: aggiorna dati $(date -u '+%Y-%m-%d')"
           git push
