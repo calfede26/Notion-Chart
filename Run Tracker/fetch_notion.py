@@ -51,7 +51,7 @@ def extract(pages):
         if name_prop.get("type") == "title":
             title_arr = name_prop.get("title", [])
             name_val = "".join(t.get("plain_text", "") for t in title_arr)
-        if "Giro" in name_val:
+        if "Giro" in name_val or "Sci" in name_val:
             continue
 
         # Distance (number) (tipo number)
