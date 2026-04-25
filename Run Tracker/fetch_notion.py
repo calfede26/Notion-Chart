@@ -45,6 +45,15 @@ def extract(pages):
         # Normalizza: prendi solo la parte YYYY-MM-DD
         date_str = date_val[:10]
 
+        # Escludi attività in bici (nome contiene "Giro")
+        name_prop = props.get("Name", props.get("title", {}))
+        name_val = ""
+        if name_prop.get("type") == "title":
+            title_arr = name_prop.get("title", [])
+            name_val = "".join(t.get("plain_text", "") for t in title_arr)
+        if "Giro" in name_val:
+            continue
+
         # Distance (number) (tipo number)
         dist_prop = props.get("Distance (number)", {})
         dist_val = None
