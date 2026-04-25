@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Run Tracker</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { background: #383836; }
+    body {
+      font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      color: #ccc;
+      padding: 16px 20px 12px;
+    }
+
+    /* ── Mode buttons ── */
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 14px;
+    }
+    .mode-btn {
+      background: transparent;
+      border: 1px solid #555;
+      color: #888;
+      font-family: inherit;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      padding: 4px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .mode-btn:hover { border-color: #e8820c; color: #e8820c; }
+    .mode-btn.active {
+      background: #e8820c;
+      border-color: #e8820c;
+      color: #1a1a18;
+    }
+    .spacer { flex: 1; }
+
+    /* ── Nav arrows + label ── */
+    .nav {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .nav-btn {
+      background: transparent;
+      border: none;
+      color: #777;
+      font-size: 14px;
+      cursor: pointer;
+      line-height: 1;
+      padding: 2px 4px;
+      transition: color 0.15s;
+    }
+    .nav-btn:hover { color: #e8820c; }
+    .nav-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: #aaa;
+      min-width: 80px;
+      text-align: center;
+      letter-spacing: 0.02em;
+    }
+
+    /* ── Legend ── */
+    .legend { display: flex; gap: 18px; margin-bottom: 14px; }
+    .legend-item {
+      display: flex; align-items: center; gap: 7px;
+      font-size: 12px; font-weight: 600; color: #999; letter-spacing: 0.01em;
+    }
+    .legend-line { width: 18px; height: 2px; border-radius: 1px; flex-shrink: 0; }
+
+    .chart-wrap { position: relative; width: 100%; height: 260px; }
+    .error { color: #e24b4a; font-size: 12px; padding: 12px 0; }
+  </style>
+</head>
+<body>
+
+  <div class="controls">
+    <button class="mode-btn active" id="btn-year">ANNO-MESI</button>
+    <button class="mode-btn" id="btn-week">MESI-SETTIMANE</button>
+    <button class="mode-btn" id="btn-day">MESE-GIORNO</button>
+    <div class="spacer"></div>
+    <div class="nav">
+      <button class="nav-btn" id="nav-prev">&#8592;</button>
+      <div class="nav-label" id="nav-label">—</div>
+      <button class="nav-btn" id="nav-next">&#8594;</button>
+    </div>
+  </div>
+
+  <div class="legend">
+    <div class="legend-item">
+      <div class="legend-line" style="background:#e8820c;box-shadow:0 0 5px rgba(232,130,12,0.8)"></div>
+      Kilometri
+    </div>
+  </div>
+
+  <div class="chart-wrap"><canvas id="chart"></canvas></div>
+  <div id="error"></div>
+
+  <script>
+    const FONT  = 'ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif';
+    const TICK  = '#888';
+    const GRID  = 'rgba(255,255,255,0.08)';
+    const ORANGE = '#e8820c';
+
+    const MONTHS_IT = ['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'];
+    const MONTHS_FULL = ['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
+
+    const glowPlugin = {
+      id: 'glowLines',
+      beforeDatasetDraw(chart) {
+        chart.ctx.save();
+        chart.ctx.shadowColor = 'rgba(232,130,12,0.65)';
+        chart.ctx.shadowBlur = 14;
+      },
+      afterDatasetDraw(chart) { chart.ctx.restore(); }
+    };
+
+    let allRecords = [];
+    let chartInstance = null;
+    let mode = 'year'; // 'year' | 'week' | 'day'
+
+    // Cursors
+    const now = new Date();
+    let curYear  = now.getFullYear();
+    let curMonth = now.getMonth(); // 0-indexed
+    // For week mode: offset in units of 3 months (0 = most recent)
+    let weekOffset = 0;
+
+    // ── Helpers ──────────────────────────────────────────────────────────
+
+    function getISOWeek(date) {
+      const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+      const day = d.getUTCDay() || 7;
+      d.setUTCDate(d.getUTCDate() + 4 - day);
+      const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+      return { week: Math.ceil((((d - yearStart) / 86400000) + 1) / 7), year: d.getUTCFullYear() };
+    }
+
+    function startOfWeek(date) {
+      const d = new Date(date);
+      const day = d.getDay() || 7;
+      d.setDate(d.getDate() - (day - 1));
+      d.setHours(0,0,0,0);
+      return d;
+    }
+
+    // ── Data builders ─────────────────────────────────────────────────────
+
+    function buildYearData() {
+      const sums = new Array(12).fill(0);
+      for (const r of allRecords) {
+        const d = new Date(r.date);
+        if (d.getFullYear() === curYear) sums[d.getMonth()] += r.distance;
+      }
+      return {
+        labels: MONTHS_IT,
+        values: sums.map(v => v > 0 ? +v.toFixed(2) : null),
+        tooltipLabels: MONTHS_FULL.map(m => `${m} ${curYear}`)
+      };
+    }
+
+    function buildWeekData() {
+      // 3-month window: most recent = last 3 months, offset goes back
+      const anchor = new Date(now.getFullYear(), now.getMonth(), 1);
+      anchor.setMonth(anchor.getMonth() - weekOffset * 3);
+      const windowEnd = new Date(anchor.getFullYear(), anchor.getMonth() + 1, 0);
+      const windowStart = new Date(anchor.getFullYear(), anchor.getMonth() - 2, 1);
+
+      // Collect weeks in window
+      const weekMap = new Map(); // key: "YYYY-Www" → {label, total}
+      for (const r of allRecords) {
+        const d = new Date(r.date);
+        if (d < windowStart || d > windowEnd) continue;
+        const sw = startOfWeek(d);
+        const { week, year } = getISOWeek(sw);
+        const key = `${year}-W${String(week).padStart(2,'0')}`;
+        if (!weekMap.has(key)) {
+          const day   = sw.getDate();
+          const month = MONTHS_IT[sw.getMonth()];
+          weekMap.set(key, { label: `${day} ${month}`, total: 0, sw });
+        }
+        weekMap.get(key).total += r.distance;
+      }
+
+      const sorted = [...weekMap.entries()]
+        .sort((a,b) => a[1].sw - b[1].sw);
+
+      const labels  = sorted.map(([,v]) => v.label);
+      const values  = sorted.map(([,v]) => +v.total.toFixed(2));
+      const tooltipLabels = sorted.map(([k,v]) => `Sett. ${v.label}`);
+
+      return { labels, values, tooltipLabels };
+    }
+
+    function buildDayData() {
+      const year = curYear;
+      const month = curMonth;
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      const sums = new Array(daysInMonth).fill(null);
+
+      for (const r of allRecords) {
+        const d = new Date(r.date);
+        if (d.getFullYear() === year && d.getMonth() === month) {
+          const idx = d.getDate() - 1;
+          sums[idx] = (sums[idx] || 0) + r.distance;
+        }
+      }
+
+      const labels = Array.from({length: daysInMonth}, (_,i) => String(i+1));
+      const values = sums.map(v => v !== null ? +v.toFixed(2) : null);
+      const tooltipLabels = Array.from({length: daysInMonth}, (_,i) =>
+        `${i+1} ${MONTHS_FULL[month]} ${year}`);
+
+      return { labels, values, tooltipLabels };
+    }
+
+    // ── Nav label ────────────────────────────────────────────────────────
+
+    function updateNavLabel() {
+      const el = document.getElementById('nav-label');
+      if (mode === 'year') {
+        el.textContent = String(curYear);
+      } else if (mode === 'week') {
+        const anchor = new Date(now.getFullYear(), now.getMonth(), 1);
+        anchor.setMonth(anchor.getMonth() - weekOffset * 3);
+        const end = new Date(anchor.getFullYear(), anchor.getMonth() + 1, 0);
+        const start = new Date(anchor.getFullYear(), anchor.getMonth() - 2, 1);
+        el.textContent = `${MONTHS_IT[start.getMonth()]}–${MONTHS_IT[end.getMonth()]} ${end.getFullYear()}`;
+      } else {
+        el.textContent = `${MONTHS_FULL[curMonth].slice(0,3)} ${curYear}`;
+      }
+    }
+
+    // ── Chart render ─────────────────────────────────────────────────────
+
+    function renderChart() {
+      let dataset;
+      if (mode === 'year')  dataset = buildYearData();
+      else if (mode === 'week') dataset = buildWeekData();
+      else dataset = buildDayData();
+
+      const { labels, values, tooltipLabels } = dataset;
+
+      if (chartInstance) chartInstance.destroy();
+
+      chartInstance = new Chart(document.getElementById('chart'), {
+        type: 'line',
+        plugins: [glowPlugin],
+        data: {
+          labels,
+          datasets: [{
+            data: values,
+            borderColor: ORANGE,
+            backgroundColor: 'transparent',
+            borderWidth: 1.5,
+            pointRadius: 3,
+            pointBackgroundColor: ORANGE,
+            pointBorderWidth: 0,
+            pointHoverRadius: 5,
+            tension: 0.4,
+            fill: false,
+            spanGaps: false,
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: 'rgba(30,30,30,0.95)',
+              borderColor: '#3a3a3a',
+              borderWidth: 0.5,
+              titleColor: '#bbb',
+              bodyColor: '#777',
+              padding: 10,
+              titleFont: { size: 11, weight: '600', family: FONT },
+              bodyFont: { size: 11, family: FONT },
+              callbacks: {
+                title: items => tooltipLabels[items[0].dataIndex],
+                label: item => {
+                  const val = values[item.dataIndex];
+                  return '  Distanza: ' + (val !== null && val !== undefined ? val + ' km' : '—');
+                },
+                labelColor: () => ({ borderColor: ORANGE, backgroundColor: ORANGE })
+              }
+            }
+          },
+          scales: {
+            x: {
+              grid: { color: GRID, drawTicks: false },
+              border: { display: false },
+              ticks: {
+                color: TICK,
+                font: { size: 10, family: FONT },
+                maxRotation: 45,
+                autoSkip: true,
+                maxTicksLimit: mode === 'day' ? 16 : 14
+              }
+            },
+            y: {
+              grid: { color: GRID, drawTicks: false },
+              border: { display: false },
+              ticks: {
+                color: TICK,
+                font: { size: 10, family: FONT },
+                padding: 6,
+                maxTicksLimit: 5,
+                callback: v => v + ' km'
+              }
+            }
+          }
+        }
+      });
+
+      updateNavLabel();
+    }
+
+    // ── Nav logic ────────────────────────────────────────────────────────
+
+    document.getElementById('nav-prev').addEventListener('click', () => {
+      if (mode === 'year') curYear--;
+      else if (mode === 'week') weekOffset++;
+      else {
+        curMonth--;
+        if (curMonth < 0) { curMonth = 11; curYear--; }
+      }
+      renderChart();
+    });
+
+    document.getElementById('nav-next').addEventListener('click', () => {
+      if (mode === 'year') curYear++;
+      else if (mode === 'week') weekOffset = Math.max(0, weekOffset - 1);
+      else {
+        curMonth++;
+        if (curMonth > 11) { curMonth = 0; curYear++; }
+      }
+      renderChart();
+    });
+
+    // ── Mode buttons ─────────────────────────────────────────────────────
+
+    function setMode(m) {
+      mode = m;
+      weekOffset = 0;
+      // Reset cursors to now when switching
+      curYear  = now.getFullYear();
+      curMonth = now.getMonth();
+      document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById('btn-' + (m === 'year' ? 'year' : m === 'week' ? 'week' : 'day')).classList.add('active');
+      renderChart();
+    }
+
+    document.getElementById('btn-year').addEventListener('click', () => setMode('year'));
+    document.getElementById('btn-week').addEventListener('click', () => setMode('week'));
+    document.getElementById('btn-day').addEventListener('click',  () => setMode('day'));
+
+    // ── Load ─────────────────────────────────────────────────────────────
+
+    async function init() {
+      try {
+        const res = await fetch('data.json?t=' + Date.now());
+        allRecords = await res.json();
+      } catch(e) {
+        document.getElementById('error').innerHTML = '<p class="error">Errore nel caricamento dei dati.</p>';
+        return;
+      }
+      renderChart();
+    }
+
+    init();
+  </script>
+</body>
+</html>
