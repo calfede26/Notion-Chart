@@ -1,5 +1,5 @@
 {
-  "updated": "2026-06-08T16:44:46.944631+00:00",
+  "updated": "2026-06-08T19:14:20.321561+00:00",
   "weeks": [
     {
       "label": "S1\nFeb. 02-08",
@@ -112,6 +112,20 @@
       "km": 26.93,
       "sleep_score": 81,
       "pushups": 350
+    },
+    {
+      "label": "S17\nMag. 25-31",
+      "week_num": 17,
+      "km": 12.05,
+      "sleep_score": 75,
+      "pushups": 290
+    },
+    {
+      "label": "S18\nGiu. 01-07",
+      "week_num": 18,
+      "km": 7.15,
+      "sleep_score": 72,
+      "pushups": 80
     }
   ]
 }
