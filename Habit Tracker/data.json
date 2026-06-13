@@ -1,5 +1,5 @@
 {
-  "updated": "2026-06-13T19:06:23.613162Z",
+  "updated": "2026-06-13T21:01:23.416904Z",
   "habits": [
     "Run",
     "Workout",
@@ -588,14 +588,14 @@
     },
     {
       "date": "2026-06-12",
-      "pct": 0,
-      "checked": 0,
+      "pct": 71,
+      "checked": 5,
       "total": 7
     },
     {
       "date": "2026-06-13",
-      "pct": 0,
-      "checked": 0,
+      "pct": 14,
+      "checked": 1,
       "total": 7
     }
   ]
