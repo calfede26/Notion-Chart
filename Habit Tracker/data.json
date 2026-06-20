@@ -1,5 +1,5 @@
 {
-  "updated": "2026-06-20T14:59:13.237560Z",
+  "updated": "2026-06-20T16:17:57.689360Z",
   "habits": [
     "Run",
     "Workout",
@@ -612,32 +612,32 @@
     },
     {
       "date": "2026-06-16",
-      "pct": 0,
-      "checked": 0,
+      "pct": 14,
+      "checked": 1,
       "total": 7
     },
     {
       "date": "2026-06-17",
-      "pct": 0,
-      "checked": 0,
+      "pct": 14,
+      "checked": 1,
       "total": 7
     },
     {
       "date": "2026-06-18",
-      "pct": 0,
-      "checked": 0,
+      "pct": 14,
+      "checked": 1,
       "total": 7
     },
     {
       "date": "2026-06-19",
-      "pct": 0,
-      "checked": 0,
+      "pct": 14,
+      "checked": 1,
       "total": 7
     },
     {
       "date": "2026-06-20",
-      "pct": 0,
-      "checked": 0,
+      "pct": 14,
+      "checked": 1,
       "total": 7
     }
   ]
