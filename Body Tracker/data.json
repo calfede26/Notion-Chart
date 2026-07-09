@@ -1,5 +1,5 @@
 {
-  "updated": "2026-07-06T11:38:47.356139+00:00",
+  "updated": "2026-07-09T17:25:23.207599+00:00",
   "weeks": [
     {
       "label": "S1\nFeb. 02-08",
@@ -126,6 +126,34 @@
       "km": 7.15,
       "sleep_score": 72,
       "pushups": 80
+    },
+    {
+      "label": "S19\nGiu. 08-14",
+      "week_num": 19,
+      "km": 28.08,
+      "sleep_score": 80,
+      "pushups": 480
+    },
+    {
+      "label": "S20\nGiu. 15-21",
+      "week_num": 20,
+      "km": 7.83,
+      "sleep_score": 63,
+      "pushups": 230
+    },
+    {
+      "label": "S21\nGiu. 22-28",
+      "week_num": 21,
+      "km": 17.56,
+      "sleep_score": 62,
+      "pushups": 370
+    },
+    {
+      "label": "S22\nGiu. 29-05",
+      "week_num": 22,
+      "km": 5.7,
+      "sleep_score": 61,
+      "pushups": 0
     }
   ]
 }
