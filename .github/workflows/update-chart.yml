@@ -24,11 +24,6 @@ jobs:
           NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
         run: python "Body Tracker/fetch_notion.py"
 
-      - name: Scarica dati Habit Tracker
-        env:
-          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
-        run: python "Habit Tracker/fetch_notion.py"
-
       - name: Scarica dati Finance Tracker
         env:
           NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
