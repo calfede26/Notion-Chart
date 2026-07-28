@@ -1,38 +1,5 @@
 {
-  "labels": [
-    "Settembre 25",
-    "Ottobre 25",
-    "Novembre 25",
-    "Dicembre 25",
-    "Gennaio 26",
-    "Febbraio 26",
-    "Marzo 26",
-    "Giugno 26",
-    "Maggio 26",
-    "Aprile 26"
-  ],
-  "totale_effettivo": [
-    349.13,
-    412.68,
-    367.95,
-    425.12,
-    316.59,
-    245.95,
-    268.79,
-    201.57,
-    239.5,
-    230.8
-  ],
-  "netto": [
-    -4.9,
-    63.55,
-    -44.73,
-    -130.3,
-    -108.53,
-    -77.46,
-    24.66,
-    -37.88,
-    8.7,
-    -38.04
-  ]
+  "labels": [],
+  "totale_effettivo": [],
+  "netto": []
 }
