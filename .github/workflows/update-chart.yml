@@ -19,21 +19,6 @@ jobs:
       - name: Installa dipendenze Python
         run: pip install requests
 
-      - name: Scarica dati Body Tracker
-        env:
-          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
-        run: python "Body Tracker/fetch_notion.py"
-
-      - name: Scarica dati Finance Tracker
-        env:
-          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
-        run: python "Finance Tracker/fetch_notion.py"
-
-      - name: Scarica dati Push ups Tracker
-        env:
-          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
-        run: python "Push ups Tracker/fetch_notion.py"
-
       - name: Scarica dati Run Tracker
         env:
           NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
