@@ -1,3 +1,4 @@
+
 import os
 import json
 import requests
@@ -22,8 +23,10 @@ def fetch_all_pages():
         res.raise_for_status()
         body = res.json()
         results.extend(body.get("results", []))
+
         if not body.get("has_more"):
             break
+
         payload["start_cursor"] = body["next_cursor"]
 
     return results
@@ -34,29 +37,33 @@ def extract(pages):
     for page in pages:
         props = page.get("properties", {})
 
+        # Tipologia: seleziona solo le attività di tipo "Corsa"
+        tipo_prop = props.get("Tipologia", {})
+        tipo_val = None
+
+        if tipo_prop.get("type") == "select" and tipo_prop.get("select"):
+            tipo_val = tipo_prop["select"].get("name")
+
+        if tipo_val != "Corsa":
+            continue
+
         # Date (tipo date)
         date_prop = props.get("Date", {})
         date_val = None
+
         if date_prop.get("type") == "date" and date_prop.get("date"):
             date_val = date_prop["date"].get("start")
+
         if not date_val:
             continue
 
         # Normalizza: prendi solo la parte YYYY-MM-DD
         date_str = date_val[:10]
 
-        # Escludi attività in bici (nome contiene "Giro")
-        name_prop = props.get("Name", props.get("title", {}))
-        name_val = ""
-        if name_prop.get("type") == "title":
-            title_arr = name_prop.get("title", [])
-            name_val = "".join(t.get("plain_text", "") for t in title_arr)
-        if "Giro" in name_val or "Sci" in name_val:
-            continue
-
-        # Distance (number) (tipo number)
+        # Distance (number)
         dist_prop = props.get("Distance (number)", {})
         dist_val = None
+
         if dist_prop.get("type") == "number":
             dist_val = dist_prop.get("number")
 
@@ -71,9 +78,11 @@ def extract(pages):
     return records
 
 if __name__ == "__main__":
-    pages  = fetch_all_pages()
-    data   = extract(pages)
-    out    = os.path.join(os.path.dirname(__file__), "data.json")
+    pages = fetch_all_pages()
+    data = extract(pages)
+
+    out = os.path.join(os.path.dirname(__file__), "data.json")
     with open(out, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
+
     print(f"Estratti e salvati {len(data)} record")
